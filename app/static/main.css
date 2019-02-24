@@ -1,0 +1,9 @@
+.form-center {
+    padding: 24px;
+    width: 360px;
+    margin: 20px auto;
+    border: 1px solid #999;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}

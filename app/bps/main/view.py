@@ -5,9 +5,9 @@ from flask_login import login_user
 
 from app import db
 from app.model.user import Student
-from app.model.config import Config
-from .form import StudentLoginForm
+from app.config import LoginConfigGroup
 from . import main
+from .form import StudentLoginForm
 
 
 @main.route("/")
@@ -31,7 +31,7 @@ def login():
 
         if not stu:
 
-            if Config.get_value("auto_create_user", False):
+            if LoginConfigGroup.auto_create_user:
                 stu = Student(form.code.data, form.password.data or form.code.data)
                 db.session.add(stu)
                 db.session.commit()

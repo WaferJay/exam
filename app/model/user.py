@@ -11,6 +11,7 @@ class Student(db.Model, UserMixin):
     __tablename__ = "student_user"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    name = db.Column(db.String, nullable=False, default="")
     stu_code = db.Column(db.Integer, nullable=False)
     pwd = db.Column(db.String(36), nullable=False, default="")
     register_time = db.Column(db.Date, nullable=False, default=datetime.date.today)

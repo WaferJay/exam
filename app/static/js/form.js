@@ -3,10 +3,11 @@
 
     "use strict";
 
-    var SUBMIT_BUTTON_SELECTOR = "input[type='submit']," +
+    const SUBMIT_BUTTON_SELECTOR = "input[type='submit']," +
         "button[type='submit']," +
         "button[data-type='submit']," +
         "input[data-type='submit']";
+    const DS_FORM_DATA_KEY = "formData";
 
     function safeCall() {
         var array = $(arguments).toArray(),
@@ -19,9 +20,16 @@
         var result = {};
 
         $inputs.each(function (i, ele) {
+
             var name = ele.getAttribute("name");
 
-            result[name] = ele.value;
+            if (ele.type.toUpperCase() === 'CHECKBOX') {
+
+                if (ele.checked)
+                    result[name] = ele.value
+            } else {
+                result[name] = ele.value;
+            }
         });
 
         return result;
@@ -34,6 +42,7 @@
             fn,
             i;
 
+        data.form.data(DS_FORM_DATA_KEY, data);
         data.form.extend(formAjax);
 
         for (field in formValidator) {
@@ -94,13 +103,7 @@
                 each = inputDoms[i];
                 name = each.getAttribute('name');
 
-                if (each.type.toUpperCase() === 'checkbox') {
-
-                    if (each.checked)
-                        inputs[name] = each.value
-                } else {
-                    inputs[each.getAttribute("name")] = each;
-                }
+                inputs[name] = each;
             }
 
             result.fields = inputs;
@@ -143,43 +146,30 @@
     function sendAjax(form, options) {
         var $form = $(form),
             dataset = $form.data(),
-            key;
+            formData = $form.data(DS_FORM_DATA_KEY),
+            ajaxOptions;
 
-        options.cache = false;
+        formData.context = formData.form;
 
-        for (key in dataset) {
-            if (!(key in options)) {
-                options[key] = dataset[key]
-            }
+        ajaxOptions = $.extend({}, dataset);
+        ajaxOptions = $.extend(ajaxOptions, formData);
+        ajaxOptions = $.extend(ajaxOptions, options);
+
+        if (ajaxOptions.params) {
+            ajaxOptions.url = $.url(ajaxOptions.url, ajaxOptions.params)
         }
+        delete ajaxOptions[DS_FORM_DATA_KEY];
+        delete ajaxOptions.params;
 
-        if (!('method' in options)) {
-            options.method = $form.attr('method');
-        }
+        ajaxOptions.cache = false;
+        console.log(ajaxOptions);
 
-        if (!('url' in options)) {
-            options.url = $form.attr('action');
-        }
-
-        $.ajax(options);
+        $.ajax(ajaxOptions);
     }
 
     var formAjax = {
         ajax: function (options) {
-
-            var each,
-                i;
-
-            for (i=0;i<this.length;i++) {
-                each = this[i];
-
-                if (each.tagName !== "FORM") {
-                    console.error(each);
-                    continue;
-                }
-
-                sendAjax(each, options);
-            }
+            sendAjax(this, options || {});
         }
     };
 
@@ -232,4 +222,18 @@
     };
 
     $.extend(validators);
+    $.extend({
+        url: function (base, params) {
+            var i = base.indexOf("?");
+
+            if (i < 0) {
+                base += "?"
+            } else if (i + 1 !== base.length) {
+                base += "&"
+            }
+
+            base += $.param(params);
+            return base;
+        }
+    })
 })(jQuery);

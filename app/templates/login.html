@@ -34,7 +34,15 @@
             "password": $.validators.required("请填写密码")
         },
         success: function (data) {
-            this.ajax({data: data.data});
+            this.ajax({
+                error: function (xhr, textStatus, error) {
+                    console.log("Login Error:", textStatus, error);
+                },
+
+                success: function (data, textStatus) {
+                    console.log(textStatus, data);
+                }
+            });
         },
         error: function (field, value, message) {
             console.log(this);

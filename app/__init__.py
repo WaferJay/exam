@@ -53,6 +53,10 @@ def create_app(config_name: str=None):
     for prefix, bp in _load_blueprints("app.bps"):
         app.register_blueprint(bp, url_prefix=prefix)
 
+    from app.template_globals import globals_dict
+    for name, func in globals_dict.items():
+        app.add_template_global(func, name)
+
     db.init_app(app)
     bootstrap.init_app(app)
     lm.init_app(app)

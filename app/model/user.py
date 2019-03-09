@@ -58,3 +58,6 @@ class Admin(db.Model, UserMixin):
 
     def verify_password(self, pwd):
         return verify_password(pwd, self.pwd)
+
+    def get_id(self):
+        return f"admin:{self.id}"

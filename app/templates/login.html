@@ -40,6 +40,7 @@
             },
             success: function (data, textStatus) {
                 console.log(textStatus, data);
+                window.location.href = data.data.redirect_to || "/";
             }
         },
 

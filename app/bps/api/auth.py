@@ -1,5 +1,5 @@
 from flask import url_for
-from flask_login import login_user
+from flask_login import login_user, current_user, logout_user
 
 from app import db
 from app.bps.api import api
@@ -11,6 +11,10 @@ from app.model.user import Student
 @api.route("/auth/login", methods=("POST",))
 @json_result
 def login():
+
+    if current_user.is_authenticated:
+        return JSONResult(ResultCode.ALREADY_LOGGED_IN)
+
     form = StudentLoginForm()
 
     if form.validate_on_submit():
@@ -24,11 +28,18 @@ def login():
 
             if stu.verify_password(pwd):
                 login_user(stu, remember=form.remember_me.data)
-                return JSONResult()
+                return JSONResult(data={"redirect_to": url_for("main.home_page")})
 
             return JSONResult(ResultCode.INCORRECT_PASSWORD)
 
     return JSONResult(ResultCode.INVALID_FORM, data=form.errors)
+
+
+@api.route('/auth/logout')
+@json_result
+def logout():
+    logout_user()
+    return JSONResult()
 
 
 @api.route('/auth/signup', methods=("POST",))
@@ -37,8 +48,8 @@ def signup():
     form = StudentSignUpForm()
 
     if form.validate_on_submit():
-        login_url = url_for('main.login_page')
 
+        stu = None
         with db.session.begin_nested():
             exists = Student.query.filter_by(stu_code=form.code.data).count()
 
@@ -46,8 +57,15 @@ def signup():
                 stu = Student(form.name.data, form.code.data, form.password.data)
                 db.session.add(stu)
 
-                return JSONResult(ResultCode.OK, data={'login_url': login_url})
+        result = JSONResult()
+        if stu:
+            login_user(stu)
+            result.data['redirect_to'] = url_for('main.home_page')
+        else:
+            result.code = ResultCode.ALREADY_REGISTERED
+            assert result.code == ResultCode.ALREADY_REGISTERED
+            result.data['redirect_to'] = url_for('main.login_page')
 
-        return JSONResult(ResultCode.ALREADY_REGISTERED, data={'login_url': login_url})
+        return result
 
     return JSONResult(ResultCode.INVALID_FORM, data=form.errors)

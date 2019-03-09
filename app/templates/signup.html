@@ -50,6 +50,8 @@
             ajax: {
                 success: function (data, textStatus) {
                     console.log(textStatus, data);
+                    var redirect = data.data.redirect_to;
+                    if (redirect) window.location.href = redirect;
                 },
                 error: function (xhr, textStatus, error) {
                     console.log("Login Error:", textStatus, error);

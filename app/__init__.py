@@ -13,6 +13,18 @@ bootstrap = Bootstrap()
 lm = LoginManager()
 
 
+@lm.user_loader
+def _user_loader(uid: str):
+    from app.model.user import Admin, Student
+    if uid.startswith("admin:"):
+        return Admin.query.get(int(uid[6:]))
+    else:
+        return Student.query.get(int(uid))
+
+
+lm.login_view = "main.login_page"
+
+
 def _load_blueprints(pkgname):
 
     direct = pkgname.replace(".", "/")
@@ -49,12 +61,15 @@ def create_app(config_name: str=None):
 
     app = Flask(__name__)
     app.config.from_object(configs.configs[config_name])
+    app.logger.debug(f"Config name: {config_name}")
 
     for prefix, bp in _load_blueprints("app.bps"):
+        app.logger.debug(f"Register Blueprint [{bp.name}:{prefix}]")
         app.register_blueprint(bp, url_prefix=prefix)
 
     from app.template_globals import globals_dict
     for name, func in globals_dict.items():
+        app.logger.debug(f"Register template variable: {name}")
         app.add_template_global(func, name)
 
     db.init_app(app)

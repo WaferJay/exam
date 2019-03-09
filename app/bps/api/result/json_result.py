@@ -1,24 +1,34 @@
 import functools
 import sys
 
-from flask import jsonify, Response
+from flask import jsonify
 
 from .code import ResultCode
 
 
 class DictMixin(dict):
 
+    __dict_mixin_exclude__ = None
+
     def __setitem__(self, key, value):
-        object.__setattr__(self, key, value)
+        if self.__is_include(key):
+            object.__setattr__(self, key, value)
+
         super().__setitem__(key, value)
 
     def __setattr__(self, key, value):
         object.__setattr__(self, key, value)
-        super().__setitem__(key, value)
+
+        if self.__is_include(key):
+            super().__setitem__(key, value)
+
+    def __is_include(self, key):
+        return not self.__dict_mixin_exclude__ or key not in self.__dict_mixin_exclude__
 
 
 class JSONResult(DictMixin):
 
+    __dict_mixin_exclude__ = ('code',)
     __slots__ = ('result_code', 'result_message', 'data', 'exception_info')
 
     def __init__(self, code: ResultCode=ResultCode.OK, msg=None,
@@ -33,6 +43,15 @@ class JSONResult(DictMixin):
 
         if exception:
             self.exception_info = ExceptionInfo(exception)
+
+    @property
+    def code(self):
+        return ResultCode(self.result_code)
+
+    @code.setter
+    def code(self, v):
+        self.result_code = v.value
+        self.result_message = v.name
 
 
 class ExceptionInfo(DictMixin):

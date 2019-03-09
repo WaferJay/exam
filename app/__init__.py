@@ -1,12 +1,15 @@
+import logging
+import logging.config
 import os
+from configparser import RawConfigParser
 
 from flask import Flask
+from flask.logging import default_handler
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
 import configs
-
 
 db = SQLAlchemy()
 bootstrap = Bootstrap()
@@ -53,6 +56,34 @@ def _load_blueprints(pkgname):
     return bps
 
 
+def load_logging_config(fname, **constants):
+
+    if fname and os.path.exists(fname):
+        conf = RawConfigParser()
+        conf.read(fname)
+
+        for section in conf.sections():
+
+            for opt, val in conf.items(section, raw=True):
+                val = val.format(**constants)
+                conf.set(section, opt, val)
+
+            dirs = conf.get(section, 'makedirs', fallback=None)
+            if not dirs:
+                continue
+
+            dirs = map(lambda e: e.strip(), dirs.split(","))
+            dirs = filter(lambda e: not os.path.exists(e), dirs)
+
+            for direct in dirs:
+                os.makedirs(direct)
+
+        logging.config.fileConfig(conf)
+        return True
+
+    return False
+
+
 def create_app(config_name: str=None):
 
     if config_name is None:
@@ -61,6 +92,12 @@ def create_app(config_name: str=None):
 
     app = Flask(__name__)
     app.config.from_object(configs.configs[config_name])
+
+    log_conf_file = app.config.get('LOGGING_CONFIG_FILE')
+    constants = {'APPDIR': app.config['APP_BASE_PATH']}
+    if not load_logging_config(log_conf_file, **constants):
+        logging.getLogger(__name__).addHandler(default_handler)
+
     app.logger.debug(f"Config name: {config_name}")
 
     for prefix, bp in _load_blueprints("app.bps"):

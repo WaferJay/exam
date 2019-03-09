@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}登录{% endblock %}
+{% block content %}
+
+    <div class="container" style="margin-top: 40px;">
+
+        <div class="text-center">
+            <h1>{{ ext_config.get('site_title', '') }} <span class="lead">考试系统</span></h1>
+        </div>
+    </div>
+
+    <div class="form-center">
+
+        <form action="{{ url_for("api.signup") }}" method="post" data-data-type="json">
+            {{ form.hidden_tag() }}
+            {{ wtf.form_field(form.code) }}
+            {{ wtf.form_field(form.name) }}
+            {{ wtf.form_field(form.password) }}
+            <div class="form-group required">
+                <label class="control-label" for="password2">再次输入密码</label>
+                <input name="password2" id="password2" type="password" class="form-control" required value="">
+            </div>
+
+            <button type="button" class="btn btn-block btn-primary" data-type="submit">登录</button>
+        </form>
+
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for("static", filename="js/form.js") }}"></script>
+    <script>
+        $("form").form().handle({
+            validators: {
+                "code": $.validators.required("请填写学号"),
+                "name": $.validators.required("请输入姓名"),
+                "password": $.validators.required("请填写密码"),
+                "password2": [
+                    $.validators.required("请再次填写密码"),
+                    function (field, value, info) {
+                        if (info.data.password !== value) {
+                            return "两次输入的密码不同"
+                        }
+                    }
+                ]
+            },
+
+            ajax: {
+                success: function (data, textStatus) {
+                    console.log(textStatus, data);
+                },
+                error: function (xhr, textStatus, error) {
+                    console.log("Login Error:", textStatus, error);
+                    var errors = xhr.responseJSON.data;
+
+                    this.errors(errors);
+                }
+            },
+
+            success: function (data) {
+                console.log(data);
+            },
+
+            eachError: function (field, value, message) {
+                console.log(field, value, message);
+            },
+
+            error: function (errors, data) {
+                console.log(errors, data);
+                this.errors(errors);
+            }
+        });
+    </script>
+{% endblock %}

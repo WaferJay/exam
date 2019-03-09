@@ -33,20 +33,18 @@
             "code": $.validators.required("请填写学号"),
             "password": $.validators.required("请填写密码")
         },
-        success: function (data) {
-            this.ajax({
-                error: function (xhr, textStatus, error) {
-                    console.log("Login Error:", textStatus, error);
-                },
 
-                success: function (data, textStatus) {
-                    console.log(textStatus, data);
-                }
-            });
+        ajax: {
+            error: function (xhr, textStatus, error) {
+                console.error(textStatus, error);
+            },
+            success: function (data, textStatus) {
+                console.log(textStatus, data);
+            }
         },
-        error: function (field, value, message) {
-            console.log(this);
-            console.log(field, value, message);
+
+        error: function (errors, data) {
+            this.errors(errors);
         }
     });
     </script>

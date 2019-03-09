@@ -37,13 +37,13 @@ def signup():
     form = StudentSignUpForm()
 
     if form.validate_on_submit():
-        login_url = url_for('main.login')
+        login_url = url_for('main.login_page')
 
-        with db.session.begin():
-            exists = Student.query.filter_by(stu_code=form.code.data).exists()
+        with db.session.begin_nested():
+            exists = Student.query.filter_by(stu_code=form.code.data).count()
 
             if not exists:
-                stu = Student(form.name.data, form.code.data, form.password)
+                stu = Student(form.name.data, form.code.data, form.password.data)
                 db.session.add(stu)
 
                 return JSONResult(ResultCode.OK, data={'login_url': login_url})

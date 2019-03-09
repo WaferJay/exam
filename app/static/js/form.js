@@ -3,17 +3,19 @@
 
     "use strict";
 
-    const SUBMIT_BUTTON_SELECTOR = "input[type='submit']," +
+    var SUBMIT_BUTTON_SELECTOR = "input[type='submit']," +
         "button[type='submit']," +
         "button[data-type='submit']," +
         "input[data-type='submit']";
-    const DS_FORM_DATA_KEY = "formData";
+    var DS_FORM_DATA_KEY = "formData";
 
     function safeCall() {
-        var array = $(arguments).toArray(),
-            fn = array.shift();
+        var args = $(arguments).toArray(),
+            fn = args.shift();
 
-        typeof fn === 'function' && fn.apply(this, array);
+        if (typeof fn === 'function') {
+            return fn.apply(this, args);
+        }
     }
 
     function getFormParameters($inputs) {
@@ -35,9 +37,11 @@
         return result;
     }
 
-    function verifyForm(data, formValidator, cb, eb) {
+    function verifyForm(data, formValidator, cb, eachError, eb, ajaxOptions) {
         var validatorResult,
+            errors = {},
             validArr,
+            hasError,
             field,
             fn,
             i;
@@ -45,6 +49,7 @@
         data.form.data(DS_FORM_DATA_KEY, data);
         data.form.extend(formAjax);
 
+        hasError = false;
         for (field in formValidator) {
 
             if (!formValidator.hasOwnProperty(field) || !(field in data.fields)) continue;
@@ -73,15 +78,25 @@
 
                 if (validatorResult !== true && typeof validatorResult !== "undefined") {
 
-                    safeCall.call(data.form, eb, data.fields[field], data.data[field], validatorResult);
+                    hasError = true;
+                    if (!(field in errors)) {
+                        errors[field] = [];
+                    }
 
-                    return;
+                    errors[field].push(validatorResult);
+                    safeCall.call(data.form, eachError, data.fields[field], data.data[field], validatorResult);
                 }
 
             }
         }
 
-        safeCall.call(data.form, cb, data);
+        if (hasError) {
+            safeCall.call(data.form, eb, errors, data);
+        } else {
+            if (safeCall.call(data.form, cb, data) !== true) {
+                data.form.ajax(ajaxOptions);
+            }
+        }
     }
 
     var formApp = {
@@ -115,8 +130,10 @@
 
             var $submitBtn,
                 callback = options.success,
+                eachError = options.eachError,
                 errback = options.error,
                 formValidator = options.validators || {},
+                ajaxOptions = options.ajax || {},
                 $forms = this;
 
             if (typeof formValidator !== 'object') {
@@ -134,7 +151,7 @@
 
                 var formData = formApp.parseForm($form);
 
-                verifyForm(formData, formValidator, callback, errback);
+                verifyForm(formData, formValidator, callback, eachError, errback, ajaxOptions);
             });
 
             $forms.bind('submit', function (event) {
@@ -162,7 +179,6 @@
         delete ajaxOptions.params;
 
         ajaxOptions.cache = false;
-        console.log(ajaxOptions);
 
         $.ajax(ajaxOptions);
     }
@@ -235,5 +251,49 @@
             base += $.param(params);
             return base;
         }
-    })
+    });
+
+    function setError($groups, errors) {
+
+        var i;
+
+        $groups.find(".help-block").remove();
+        if (!errors) {
+            $groups.removeClass("has-error");
+            return;
+        }
+
+        $groups.addClass("has-error");
+
+        for (i=0;i<errors.length;i++) {
+
+            $("<p class='help-block'></p>").text(errors[i])
+                .appendTo($groups);
+        }
+    }
+
+    $.fn.extend({
+        errors: function (errors) {
+            var $group = this.filter(".form-group"),
+                key;
+
+            $group = $group.add(this.parent(".form-group"));
+            $group = $group.add(this.find(".form-group"));
+            setError($group, null);
+
+            if (Array.isArray(errors)) {
+                setError($group, errors);
+            } else if (typeof errors === 'object' && errors !== null) {
+
+                for (key in errors) {
+                    $group = this.find("#"+key).parent(".form-group");
+                    setError($group, errors[key]);
+                }
+            } else {
+                setError($group, null);
+            }
+
+            return this;
+        }
+    });
 })(jQuery);

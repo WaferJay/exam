@@ -12,8 +12,8 @@ class Student(db.Model, UserMixin):
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     name = db.Column(db.String, nullable=False, default="")
-    stu_code = db.Column(db.Integer, nullable=False)
-    pwd = db.Column(db.String(36), nullable=False, default="")
+    stu_code = db.Column(db.String, nullable=False)
+    pwd = db.Column(db.String(36), nullable=False)
     register_time = db.Column(db.Date, nullable=False, default=datetime.date.today)
 
     def __init__(self, name, code, pwd=None):

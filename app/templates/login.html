@@ -18,6 +18,9 @@
         {{ wtf.form_field(form.password) }}
         {{ wtf.form_field(form.remember_me) }}
 
+        <p class="text-primary text-right">没有账号? 点击
+            <a class="text-danger" href="{{ url_for(".signup_page") }}">注册</a>
+        </p>
         <button type="button" class="btn btn-block btn-primary" data-type="submit">登录</button>
     </form>
 
@@ -37,6 +40,16 @@
         ajax: {
             error: function (xhr, textStatus, error) {
                 console.error(textStatus, error);
+                var resp = xhr.responseJSON;
+                switch (resp.result_code) {
+
+                case resultCode.INVALID_FORM:
+                    this.errors(resp.data);
+                    break;
+                case resultCode.USER_NOT_EXISTS:
+                    swal("该用户不存在", "", "error");
+                    break;
+                }
             },
             success: function (data, textStatus) {
                 console.log(textStatus, data);

@@ -14,3 +14,12 @@ class ResultCode(Enum):
     ALREADY_LOGGED_IN = 40902
 
     UNHANDLED_EXCEPTION = 50001
+
+
+def result_code_map():
+    code = {}
+
+    for each in ResultCode.__members__:
+        code[each] = ResultCode[each].value
+
+    return code

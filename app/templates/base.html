@@ -2,6 +2,10 @@
 {% block head %}
     {{ super() }}
     <link rel="stylesheet" href="{{ url_for("static", filename="main.css") }}">
+    <script>
+        window.resultCode = {{ result_code | tojson }};
+    </script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 {% endblock %}
 
 {% block content %}
